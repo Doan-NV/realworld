@@ -23,10 +23,10 @@ export class User {
   username: string;
 
   // khi insert thi hash truoc
-  // @BeforeInsert()
-  // async hashPassword() {
-  //   this.password = await bcrypt.hash(this.password, 10);
-  // }
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
   @Column()
   password: string;
 
