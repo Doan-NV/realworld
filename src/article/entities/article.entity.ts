@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
+import { ProfileEntity } from 'src/profile/entities/follower.entity';
 @Entity('article')
 export class Article {
   @PrimaryGeneratedColumn()
@@ -17,7 +18,7 @@ export class Article {
   @Column()
   title: string;
 
-  @Column({ default: ' ' })
+  @Column({ default: '' })
   slug: string;
 
   @Column()
@@ -38,12 +39,12 @@ export class Article {
 
   // @Column({ default: ' ' })
   // tagList: string;
-  @Column({ default: ' ' })
+  @Column({ default: '' })
   tagList: string;
 
   //  1 người có thể có nhiều bài báo || nhiều bài báo của 1 người
   @ManyToOne(() => User, (user) => user.article)
-  author: User | {}; // object
+  author: User; // object
 
   // 1 bài viết có thể có nhiều bình luận
   @OneToMany(() => Comment, (commnet) => commnet.article, { eager: true })
