@@ -36,12 +36,14 @@ export class Article {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updateAt: Date;
 
+  // @Column({ default: ' ' })
+  // tagList: string;
   @Column({ default: ' ' })
   tagList: string;
 
   //  1 người có thể có nhiều bài báo || nhiều bài báo của 1 người
   @ManyToOne(() => User, (user) => user.article)
-  author: User;
+  author: User | {}; // object
 
   // 1 bài viết có thể có nhiều bình luận
   @OneToMany(() => Comment, (commnet) => commnet.article, { eager: true })

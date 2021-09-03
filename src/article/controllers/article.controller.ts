@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -26,6 +27,14 @@ export class ArticleController {
     @Body() bodys: CreateArticleDto,
     @Request() req,
   ): Promise<any> {
+    console.log(req.user.id);
+    // return null;
+    return this.articleService.createArticle(bodys, req.user.id);
+  }
+  // /articles/{slug}
+  @UseGuards(JwtAuthGuard)
+  @Put('/articles/:slug')
+  async update(@Body() bodys: CreateArticleDto, @Request() req): Promise<any> {
     console.log(req.user.id);
     // return null;
     return this.articleService.createArticle(bodys, req.user.id);

@@ -5,6 +5,7 @@ import { User } from 'src/user/entities/user.entity';
 
 import { getRepository, Repository } from 'typeorm';
 import { CreateArticleDto } from '../dto/createArticle.dto';
+import { UpdateArticleDto } from '../dto/updateArticle.dto';
 import { Article } from '../entities/article.entity';
 
 @Injectable()
@@ -18,9 +19,6 @@ export class ArticleService {
     private profileEntity: Repository<ProfileEntity>,
   ) {}
   async getArticleFavorited(userId: number): Promise<any> {
-    //   const articleFavorite = await getRepository(Article)
-    //     .createQueryBuilder().leftJoinAndSelect("")
-
     const listUserFollowing = await this.profileEntity.find({
       followerId: userId,
     });
@@ -30,20 +28,26 @@ export class ArticleService {
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     } else {
-      console.log(listUserFollowing);
-
       const users = listUserFollowing.map((user) => {
         return user.followingId;
       });
-      console.log(users);
-
-      const article = await getRepository(Article)
+      const articles = await getRepository(Article)
         .createQueryBuilder()
         .where('authorId IN (:users)', { users })
-        .skip(1)
-        .take(20)
+        .skip(0) // bo qua bao nhieu thang
+        .take(20) // lay bao nhieu thang
         .getMany();
-      console.log(article);
+
+      // tra ve khong co object tac gia
+      // return articles;
+
+      // trả về có author type profile {object}
+      const author = await this.getProfileAuthor(userId);
+      const responseArticle = articles.map((articles) => {
+        articles.author = author;
+        return articles;
+      });
+      return responseArticle;
     }
   }
 
@@ -52,20 +56,74 @@ export class ArticleService {
     userId: number,
   ): Promise<any> {
     const article = new Article();
-
     article.title = articleData.title;
     article.body = articleData.body;
     article.description = articleData.description;
     article.tagList = articleData.taglist;
 
     const newArticle = await this.articleRepository.save(article);
-
+    if (!newArticle) {
+      throw new HttpException(
+        { message: 'no article you need ' },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
     const author = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['article'],
     });
     author.article.push(article);
-    await this.userRepository.save(author);
+    await this.userRepository.save(author); // lưu userId vào db
+    // return newArticle; // trả về nhưng không có object tác giả.....
+
+    /// tra ve co object tac gia
+    newArticle.author = {
+      username: author.username,
+      bio: author.bio,
+      image: author.image,
+      // following: true ????
+    };
     return newArticle;
+  }
+
+  async updateArticle(
+    slug: string,
+    userId: number,
+    updateArticle: UpdateArticleDto,
+  ): Promise<any> {
+    // title, description, body
+    const article = await this.articleRepository.findOne({ slug: slug });
+    if (!article) {
+      throw new HttpException(
+        { message: 'no article you feed ' },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    article.title = updateArticle.title;
+    article.body = updateArticle.body;
+    article.description = updateArticle.description;
+    article.updateAt = new Date();
+    // tra ve khong co object tac gia
+    // return article;
+
+    // tra ve co tac gia
+    const author = await this.getProfileAuthor(userId);
+    article.author = author;
+    return article;
+  }
+
+  async getGlobalArticle() {}
+
+  async getProfileAuthor(userId: number): Promise<any> {
+    const authorProfile = await this.userRepository.findOne({ id: userId });
+    const author = {
+      username: authorProfile.username,
+      bio: authorProfile.bio,
+      image: authorProfile.image,
+      // following: true ????
+    };
+    console.log(author);
+
+    return author;
   }
 }
