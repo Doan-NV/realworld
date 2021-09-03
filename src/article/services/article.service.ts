@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ProfileEntity } from 'src/profile/entities/follower.entity';
 import { User } from 'src/user/entities/user.entity';
 
-import { getRepository, Repository } from 'typeorm';
+import { getRepository, Like, Repository } from 'typeorm';
 import { CreateArticleDto } from '../dto/createArticle.dto';
 import { UpdateArticleDto } from '../dto/updateArticle.dto';
 import { Article } from '../entities/article.entity';
@@ -32,20 +32,17 @@ export class ArticleService {
         return user.followingId;
       });
       const articles = await getRepository(Article)
-        .createQueryBuilder()
+        .createQueryBuilder('article')
         .where('authorId IN (:users)', { users })
+        .leftJoinAndSelect('article.author', 'author')
         .skip(0) // bo qua bao nhieu thang
         .take(20) // lay bao nhieu thang
         .getMany();
-
-      // tra ve khong co object tac gia
-      // return articles;
-
-      // trả về có author type profile {object}
-      const author = await this.getProfileAuthor(userId);
-      const responseArticle = articles.map((articles) => {
-        articles.author = author;
-        return articles;
+      const responseArticle = articles.map((article) => {
+        delete article.author.id;
+        delete article.author.email;
+        delete article.author.password;
+        return article;
       });
       return responseArticle;
     }
@@ -74,28 +71,30 @@ export class ArticleService {
     });
     author.article.push(article);
     await this.userRepository.save(author); // lưu userId vào db
-    // return newArticle; // trả về nhưng không có object tác giả.....
-
-    /// tra ve co object tac gia
-    newArticle.author = {
-      username: author.username,
-      bio: author.bio,
-      image: author.image,
-      // following: true ????
-    };
     return newArticle;
   }
 
   async updateArticle(
-    slug: string,
-    userId: number,
     updateArticle: UpdateArticleDto,
+    userId: number, // id tac gia
+    slug: string,
   ): Promise<any> {
-    // title, description, body
-    const article = await this.articleRepository.findOne({ slug: slug });
+    const article = await getRepository(Article)
+      .createQueryBuilder('article')
+      .where('slug = :slug', { slug })
+      .leftJoinAndSelect('article.author', 'author')
+      .getOne();
+
     if (!article) {
       throw new HttpException(
         { message: 'no article you feed ' },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (article.author.id != userId) {
+      throw new HttpException(
+        { message: 'you can not update artilce' },
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -103,16 +102,23 @@ export class ArticleService {
     article.body = updateArticle.body;
     article.description = updateArticle.description;
     article.updateAt = new Date();
-    // tra ve khong co object tac gia
-    // return article;
+    delete article.author.id;
+    delete article.author.email;
+    delete article.author.password;
 
-    // tra ve co tac gia
-    const author = await this.getProfileAuthor(userId);
-    article.author = author;
     return article;
   }
 
-  async getGlobalArticle() {}
+  async getGlobalArticle(filter: string) {
+    const globalArticle = await getRepository(Article)
+      .createQueryBuilder('articles')
+      .where({ title: Like(`%${filter}%`) }) // LIKE filter
+      .leftJoinAndSelect('articles.author', 'author')
+      .skip(0) // bo qua bao nhieu
+      .take(20) // lay bao nhieu ket qua
+      .getMany();
+    return globalArticle;
+  }
 
   async getProfileAuthor(userId: number): Promise<any> {
     const authorProfile = await this.userRepository.findOne({ id: userId });
@@ -122,8 +128,77 @@ export class ArticleService {
       image: authorProfile.image,
       // following: true ????
     };
-    console.log(author);
-
     return author;
+  }
+
+  async getAnArticle(slug: string) {
+    const article = await getRepository(Article)
+      .createQueryBuilder('articles')
+      .where({ slug: slug })
+      .leftJoinAndSelect('articles.author', 'author')
+      .getOne();
+    delete article.author.id;
+    delete article.author.email;
+    delete article.author.password;
+    return article;
+  }
+
+  async deleteArticle(authorId: number, slug: string): Promise<any> {
+    const article = await getRepository(Article)
+      .createQueryBuilder('article')
+      .where({ slug: slug })
+      .leftJoinAndSelect('article.author', 'author')
+      .getOne();
+    if (article.author.id != authorId) {
+      throw new HttpException(
+        {
+          message: 'you can not delete this article because you are not author',
+        },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    const isDelete = await getRepository(Article)
+      .createQueryBuilder()
+      .delete()
+      .from(Article)
+      .where({ slug: slug })
+      .execute();
+
+    if (isDelete) {
+      return HttpStatus.OK;
+    }
+  }
+
+  // -------------------------------Comment---------------------------
+  async createComment(
+    authorCommentId: number,
+    slug: string,
+    comment: string,
+  ): Promise<any> {
+    //
+  }
+
+  async getCommentOfArticle(slug: string) {
+    //
+  }
+
+  async deleteComment(
+    authorIdOfComment: number,
+    slug: string,
+    idComment: number,
+  ): Promise<any> {
+    //
+  }
+
+  async favoriteArticle(userId: number, slug: string): Promise<any> {
+    //
+  }
+
+  async unFavoriteArticle(userId: number, slug: string): Promise<any> {
+    //
+  }
+
+  async getTags(): Promise<any> {
+    //
   }
 }
