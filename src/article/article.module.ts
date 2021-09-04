@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Comment } from 'src/comment/entities/comment.entity';
 import { ProfileEntity } from 'src/profile/entities/follower.entity';
 import { ProfileModule } from 'src/profile/profile.module';
 import { User } from 'src/user/entities/user.entity';
@@ -10,7 +11,7 @@ import { ArticleService } from './services/article.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Article, User, ProfileEntity]),
+    TypeOrmModule.forFeature([Article, User, ProfileEntity, Comment]),
     UserModule,
     ProfileModule,
   ],

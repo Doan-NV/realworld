@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
@@ -27,6 +28,10 @@ export class Article {
   @Column()
   body: string;
 
+  @BeforeInsert()
+  insertCreate() {
+    this.updateAt = new Date();
+  }
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createAt: Date;
 
@@ -34,13 +39,17 @@ export class Article {
   update() {
     this.updateAt = new Date();
   }
+  @BeforeInsert()
+  insert() {
+    this.updateAt = new Date();
+  }
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updateAt: Date;
 
   // @Column({ default: ' ' })
   // tagList: string;
-  @Column({ default: '' })
-  tagList: string;
+  @Column('simple-array')
+  tagList: string[];
 
   //  1 người có thể có nhiều bài báo || nhiều bài báo của 1 người
   @ManyToOne(() => User, (user) => user.article)

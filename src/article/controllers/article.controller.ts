@@ -131,7 +131,7 @@ export class ArticleController {
     description: 'Unexpected error',
   })
   @UseGuards(JwtAuthGuard)
-  @Post('articles/{slug}/comments')
+  @Post('articles/:slug/comments')
   async createComment(
     @Request() req,
     @Param() params,
@@ -159,7 +159,7 @@ export class ArticleController {
     description: 'Unexpected error',
   })
   @UseGuards(JwtAuthGuard)
-  @Delete('articles/{slug}/comments/{id}')
+  @Delete('articles/:slug/comments/:id')
   async deleteComment(@Request() req, @Param() params): Promise<any> {
     //
     return this.articleService.deleteComment(
@@ -183,7 +183,7 @@ export class ArticleController {
     description: 'Unexpected error',
   })
   @UseGuards(JwtAuthGuard)
-  @Post('articles/{slug}/favorite')
+  @Post('articles/:slug/favorite')
   async favoriteAnArticle(@Request() req, @Param() params): Promise<any> {
     //
     return this.articleService.favoriteArticle(req.user.id, params.slug);
