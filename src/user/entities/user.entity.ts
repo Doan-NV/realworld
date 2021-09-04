@@ -47,6 +47,6 @@ export class User {
   article: Article[];
 
   // 1 người có thể có nhiều bình luận ở nhiều bài viết khác nhau
-  @OneToMany(() => Comment, (comment) => comment.author)
-  comment: Comment[];
+  @OneToMany(() => Comment, (comment) => comment.author, { eager: true })
+  comments: Comment[];
 }
