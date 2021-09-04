@@ -5,12 +5,12 @@ import {
   Column,
   Entity,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity('comment')
 export class Comment {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -31,6 +31,6 @@ export class Comment {
   article: Article;
 
   // 1 người có nhiều bình luận
-  @ManyToOne(() => User, (user) => user.comment)
+  @ManyToOne(() => User, (author) => author.comments)
   author: User;
 }
