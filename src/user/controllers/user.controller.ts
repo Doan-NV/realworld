@@ -48,7 +48,6 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('user')
   async getDetail(@Request() req): Promise<any> {
-    console.log(req.user.id);
     return this.userService.findOne(req.user.username);
   }
 
@@ -64,8 +63,8 @@ export class UserController {
   })
   @UsePipes(new ValidationPipe())
   @Post('users')
-  async create(@Body() bodys: CreateUserDto): Promise<any> {
-    return this.userService.create(bodys);
+  async create(@Body() user: CreateUserDto): Promise<any> {
+    return this.userService.create(user);
   }
 
   @ApiOperation({ summary: 'Existing user login' })
@@ -78,8 +77,8 @@ export class UserController {
     description: 'Unexpected error',
   })
   @Post('users/login')
-  async login(@Body() bodys: LoginUserDto): Promise<any> {
-    return this.userService.login(bodys);
+  async login(@Body() user: LoginUserDto): Promise<any> {
+    return this.userService.login(user);
   }
 
   @ApiOperation({ summary: 'Update current user' })

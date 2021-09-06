@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { response } from 'express';
+import { query, response } from 'express';
 import { JwtAuthGuard } from 'src/user/auth/jwt-auth.guard';
 import { CreateArticleDto } from '../dto/createArticle.dto';
 import { ArticleService } from '../services/article.service';
@@ -22,15 +22,43 @@ export class ArticleController {
   constructor(private articleService: ArticleService) {}
 
   // get favorite article
-  @ApiOperation({ summary: 'Create article' })
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'favorite article' })
   @ApiResponse({
     status: 201,
     description: ' successfully ',
   })
+  @UseGuards(JwtAuthGuard)
   @Get('articles/feed')
   async getArticleFavorited(@Request() req): Promise<any> {
     return this.articleService.getArticleFavorited(req.user.id);
+  }
+
+  // get article by author
+  @ApiOperation({ summary: 'get articles by author | tag | favorited' })
+  @ApiResponse({
+    status: 200,
+    description: ' successfully ',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get('articles')
+  async getArticlesByAuthor(@Query() query, @Request() req): Promise<any> {
+    if (query.author) {
+      console.log('chayj vao author');
+      return this.articleService.getArticleByAuthor(query.author);
+    }
+    if (query.favorited) {
+      console.log('chayj vao favorite');
+      return this.articleService.getArticleByFavoritedName(
+        query.favorited,
+        req.user.id,
+      );
+    }
+    if (query.tag) {
+      console.log('chayj vao tag');
+
+      return this.articleService.getArticleByTag(query.tag);
+    }
+    return this.articleService.getAllArticle();
   }
 
   // create article
@@ -62,6 +90,8 @@ export class ArticleController {
     @Request() req,
     @Param() params,
   ): Promise<any> {
+    console.log(bodys);
+
     return this.articleService.updateArticle(bodys, req.user.id, params.slug);
   }
 
@@ -203,7 +233,7 @@ export class ArticleController {
     description: 'Unexpected error',
   })
   @UseGuards(JwtAuthGuard)
-  @Delete('articles/{slug}/favorite')
+  @Delete('articles/:slug/favorite')
   async UnfavoriteArticle(@Request() req, @Param() params): Promise<any> {
     //
     return this.articleService.unFavoriteArticle(req.user.id, params.slug);

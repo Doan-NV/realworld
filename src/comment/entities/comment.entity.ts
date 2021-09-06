@@ -14,14 +14,14 @@ export class Comment {
   id: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createAt: Date;
+  createdAt: Date;
 
   @BeforeUpdate()
   update() {
-    this.updateAt = new Date();
+    this.updatedAt = new Date();
   }
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updateAt: Date;
+  updatedAt: Date;
 
   @Column()
   body: string;

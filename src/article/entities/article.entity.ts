@@ -30,21 +30,21 @@ export class Article {
 
   @BeforeInsert()
   insertCreate() {
-    this.updateAt = new Date();
+    this.updatedAt = new Date();
   }
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createAt: Date;
+  createdAt: Date;
 
   @BeforeUpdate()
   update() {
-    this.updateAt = new Date();
+    this.updatedAt = new Date();
   }
   @BeforeInsert()
   insert() {
-    this.updateAt = new Date();
+    this.updatedAt = new Date();
   }
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updateAt: Date;
+  updatedAt: Date;
 
   // @Column({ default: ' ' })
   // tagList: string;

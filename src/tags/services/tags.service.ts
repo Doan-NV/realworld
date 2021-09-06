@@ -10,7 +10,10 @@ export class TagsService {
     private readonly tagRepository: Repository<Tag>,
   ) {}
 
-  async getTags(): Promise<Tag[]> {
-    return this.tagRepository.find();
+  async getTags(): Promise<any> {
+    const tags = await this.tagRepository.find();
+    console.log(tags);
+
+    // return await this.tagRepository.find();
   }
 }

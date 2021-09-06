@@ -24,8 +24,10 @@ export class ProfileController {
     description: 'Unexpected error',
   })
   @UseGuards(JwtAuthGuard)
-  @Get('profiles/:username')
+  @Get('profiles/:celeb_username')
   async get(@Param() params, @Request() req): Promise<any> {
+    console.log(params);
+
     return this.profileService.findProfile(params.username, req.user.id);
   }
 

@@ -20,15 +20,16 @@ export class UserService {
   }
 
   //login
-  async login(loginUserDto: LoginUserDto): Promise<any> {
-    const { username, password } = loginUserDto;
+  async login(loginUserDto): Promise<any> {
+    const { email, password } = loginUserDto.user;
     const user = await getRepository(User)
       .createQueryBuilder()
-      .where('username = :username', { username })
+      .where('email = :email', { email })
       .getOne();
+
     if (!user) {
       throw new HttpException(
-        { message: 'wrong username ' },
+        { message: 'wrong email ' },
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     } else {
@@ -55,8 +56,8 @@ export class UserService {
   // findOne(id: string)
 
   // create
-  async create(createUserDto: CreateUserDto): Promise<any> {
-    const { email, username, password } = createUserDto;
+  async create(createUserDto): Promise<any> {
+    const { email, username, password } = createUserDto.user;
 
     // check exist
     const userExist = await getRepository(User)
@@ -83,16 +84,16 @@ export class UserService {
     return this.buildUser(saveUser);
   }
 
-  buildUser(user) {
-    const userBuilded = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      bio: user.bio,
-      token: this.generateToken(user),
-      image: user.image,
+  buildUser(userx) {
+    const user = {
+      id: userx.id,
+      username: userx.username,
+      email: userx.email,
+      bio: userx.bio,
+      token: this.generateToken(userx),
+      image: userx.image,
     };
-    return { userBuilded };
+    return { user };
   }
 
   // create jwt
@@ -106,14 +107,11 @@ export class UserService {
     return token;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<any> {
-    const { email, username, bio, image } = updateUserDto;
-    const user = await getRepository(User)
-      .createQueryBuilder()
-      .update(User)
-      .set({ username: username, email: email, bio: bio, image: image })
-      .where('id = :id', { id })
-      .execute();
-    return this.buildUser(updateUserDto);
+  async update(id: number, updateUserDto: any): Promise<any> {
+    const user = await this.userRepository.findOne(id);
+    delete user.password;
+    delete user.favorites;
+    let update = Object.assign(user, updateUserDto);
+    return this.buildUser(user);
   }
 }

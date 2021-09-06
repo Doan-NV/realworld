@@ -21,6 +21,22 @@ export class ArticleService {
     @InjectRepository(Comment)
     private commentEntity: Repository<Comment>,
   ) {}
+
+  async getAllArticle(): Promise<any> {
+    const articles = await getRepository(Article)
+      .createQueryBuilder('article')
+      .leftJoinAndSelect('article.author', 'author')
+      .getMany();
+
+    const responseArticles = articles.map((article) => {
+      delete article.author.id;
+      delete article.author.password;
+      delete article.author.email;
+      return article;
+    });
+
+    return { articles: responseArticles, articlesCount: articles.length };
+  }
   async getArticleFavorited(userId: number): Promise<any> {
     const listUserFollowing = await this.profileEntity.find({
       followerId: userId,
@@ -47,8 +63,55 @@ export class ArticleService {
         delete article.author.password;
         return article;
       });
-      return responseArticle;
+      return {
+        articles: responseArticle,
+        articlesCount: responseArticle.length,
+      };
     }
+  }
+  async getArticleByTag(tag: string): Promise<any> {
+    let articles = await getRepository(Article)
+      .createQueryBuilder('articles')
+      .where({ tagList: tag })
+      .leftJoinAndSelect('articles.author', 'author')
+      .getMany();
+    const listArticle = articles.map((art) => {
+      delete art.author.id;
+      delete art.author.email;
+      delete art.author.password;
+      return art;
+    });
+    return { articles: listArticle, articlesCount: listArticle.length };
+  }
+  async getArticleByFavoritedName(
+    favorited: string,
+    userId: number,
+  ): Promise<any> {
+    //
+    const { articles } = await this.getArticleFavorited(userId);
+    const listarticle = await articles.filter((article) => {
+      const isHave = article.author.username.indexOf(favorited) !== -1;
+      return isHave;
+    });
+    return { articles: listarticle, articlesCount: listarticle.length };
+  }
+  async getArticleByAuthor(author: string): Promise<any> {
+    let articles = await this.articleRepository.find({
+      where: { author: { username: author } },
+      relations: ['author'],
+    });
+
+    articles = articles.map((article) => {
+      delete article.author.id;
+      delete article.author.email;
+      delete article.author.comments;
+      delete article.author.password;
+      return article;
+    });
+    return {
+      articles: articles,
+      articlesCount: articles.length,
+    };
   }
 
   async createArticle(
@@ -78,7 +141,7 @@ export class ArticleService {
   }
 
   async updateArticle(
-    updateArticle: UpdateArticleDto,
+    updateArticle: any,
     userId: number, // id tac gia
     slug: string,
   ): Promise<any> {
@@ -101,15 +164,25 @@ export class ArticleService {
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
-    article.title = updateArticle.title;
-    article.body = updateArticle.body;
-    article.description = updateArticle.description;
-    article.updateAt = new Date();
+    console.log(article);
+
+    const articleData = updateArticle.article;
+    console.log(articleData.body);
+
+    article.title = articleData.title ? articleData.title : article.title;
+    article.body = articleData.body ? articleData.body : article.body;
+    article.description = articleData.description
+      ? articleData.description
+      : article.body;
+    console.log(article.body);
+
     delete article.author.id;
     delete article.author.email;
     delete article.author.password;
+    console.log(article);
 
-    return article;
+    await this.articleRepository.save(article);
+    return { article };
   }
 
   async getGlobalArticle(filter: string) {
@@ -143,7 +216,7 @@ export class ArticleService {
     delete article.author.id;
     delete article.author.email;
     delete article.author.password;
-    return article;
+    return { article: article };
   }
 
   async deleteArticle(authorId: number, slug: string): Promise<any> {
@@ -177,11 +250,13 @@ export class ArticleService {
   async createComment(
     authorCommentId: number,
     slug: string,
-    content: string,
+    content: any,
   ): Promise<any> {
+    console.log(content.body);
+
     // id , create at, update at, body, authorId, article id
     let newComment = new Comment();
-    newComment.body = content;
+    newComment.body = content.body;
 
     let author = await this.userRepository.findOne({
       where: { id: authorCommentId },
@@ -199,14 +274,14 @@ export class ArticleService {
     article = await this.articleRepository.save(article);
     author = await this.userRepository.save(author);
     const comment = await this.commentEntity.findOne({
-      where: { body: content },
+      where: { body: content.body },
       relations: ['author'],
     });
     delete comment.author.id;
     delete comment.author.password;
     delete comment.author.email;
     delete comment.author.comments;
-    return comment;
+    return { comment };
   }
 
   async getCommentOfArticle(slug: string) {
@@ -227,7 +302,7 @@ export class ArticleService {
       delete cmt.author.comments;
       return cmt;
     });
-    return listCmt;
+    return { comments: listCmt };
   }
 
   async deleteComment(
@@ -260,18 +335,27 @@ export class ArticleService {
 
   async favoriteArticle(userId: number, slug: string): Promise<any> {
     //
-    const article = await this.articleRepository.findOne({ slug: slug });
+    const article = await this.articleRepository.findOne({
+      where: { slug: slug },
+      relations: ['author'],
+    });
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['favorites'],
     });
     user.favorites.push(article);
+    article.favorited = true;
+    article.favoritesCount += 1;
     await this.userRepository.save(user);
+    return { article };
   }
 
   async unFavoriteArticle(userId: number, slug: string): Promise<any> {
     //
-    const article = await this.articleRepository.findOne({ slug: slug });
+    const article = await this.articleRepository.findOne({
+      where: { slug: slug },
+      relations: ['author'],
+    });
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['favorites'],
@@ -279,7 +363,10 @@ export class ArticleService {
     user.favorites = user.favorites.filter((art) => {
       return art.id !== article.id;
     });
+    article.favorited = false;
+    article.favoritesCount -= 1;
     await this.userRepository.save(user);
+    return { article };
   }
 
   async getTags(): Promise<any> {

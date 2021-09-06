@@ -1,14 +1,14 @@
 import { IsEmail, IsEmpty, IsString } from 'class-validator';
 
 export class UpdateUserDto {
-  @IsEmail()
-  email: string;
+  @IsString()
+  email?: string;
 
   @IsEmpty()
-  username: string;
+  username?: string;
 
-  bio: string;
+  bio?: string;
 
   @IsEmpty()
-  image: string;
+  image?: string;
 }
